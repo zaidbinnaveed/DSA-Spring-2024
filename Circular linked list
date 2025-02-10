@@ -1,0 +1,96 @@
+#include <iostream>
+using namespace std;
+
+// Node structure representing a delivery location
+struct DeliveryNode {
+    int fuelRequired;  // Fuel demand at the node
+    int distance;      // Distance of the node
+    bool canDeliver;   // Whether the node is deliverable or not
+    DeliveryNode* next; // Pointer to the next node (circular linked list)
+
+    // Constructor to initialize a node
+    DeliveryNode(int fuel, int dist, bool deliverable) 
+        : fuelRequired(fuel), distance(dist), canDeliver(deliverable), next(nullptr) {}
+};
+
+// FuelDelivery system to manage fuel distribution
+class FuelDelivery {
+private:
+    DeliveryNode* head;  // Head of the circular linked list
+    int remainingFuel;   // Fuel available in the tank
+
+public:
+    // Constructor to initialize the delivery system
+    FuelDelivery(int initialFuel = 1000) : head(nullptr), remainingFuel(initialFuel) {}
+
+    // Function to add a new delivery node to the circular linked list
+    void addDeliveryPoint(int fuel, int dist, bool deliverable) {
+        DeliveryNode* newNode = new DeliveryNode(fuel, dist, deliverable);
+
+        if (!head) {
+            head = newNode;
+            head->next = head;  // Circular link
+            return;
+        }
+
+        // Traverse to the last node
+        DeliveryNode* temp = head;
+        while (temp->next != head) temp = temp->next;
+
+        // Insert the new node at the end and maintain circular linkage
+        temp->next = newNode;
+        newNode->next = head;
+    }
+
+    // Function to deliver fuel optimally based on demand & distance
+    void deliverFuel() {
+        if (!head) {
+            cout << "No delivery points available.\n";
+            return;
+        }
+
+        while (remainingFuel > 0) {
+            DeliveryNode* temp = head;
+            DeliveryNode* bestNode = nullptr;
+
+            // Find the best node to deliver fuel (highest demand, then lowest distance)
+            do {
+                if (temp->canDeliver && temp->fuelRequired <= remainingFuel) {
+                    if (!bestNode || temp->fuelRequired > bestNode->fuelRequired || 
+                        (temp->fuelRequired == bestNode->fuelRequired && temp->distance < bestNode->distance)) {
+                        bestNode = temp;
+                    }
+                }
+                temp = temp->next;
+            } while (temp != head);
+
+            // If a valid delivery node is found, deliver fuel
+            if (bestNode) {
+                cout << "Delivering " << bestNode->fuelRequired << " litres at node " 
+                     << "(Distance: " << bestNode->distance << " km)\n";
+                
+                remainingFuel -= bestNode->fuelRequired;
+                bestNode->canDeliver = false; // Mark as delivered
+            } else {
+                cout << "No more suitable delivery points or insufficient fuel.\n";
+                break;
+            }
+        }
+    }
+};
+
+int main() {
+    FuelDelivery fuelSystem;
+
+    // Adding delivery points (fuel required, distance, canDeliver)
+    fuelSystem.addDeliveryPoint(400, 10, true);
+    fuelSystem.addDeliveryPoint(200, 5, true);
+    fuelSystem.addDeliveryPoint(700, 15, false);
+    fuelSystem.addDeliveryPoint(300, 8, true);
+    fuelSystem.addDeliveryPoint(600, 12, true);
+
+    cout << "Starting fuel delivery...\n";
+    fuelSystem.deliverFuel();
+
+    return 0;
+}
